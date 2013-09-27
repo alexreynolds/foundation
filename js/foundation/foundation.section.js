@@ -29,7 +29,7 @@
 
     init: function(scope, method, options) {
       var self = this;
-      Foundation.inherit(this, 'throttle data_options position_right offset_right');
+      Foundation.inherit(this, 'throttle data_options position_right offset_right set_data get_data');
 
       if (typeof method === 'object') {
         $.extend(true, self.settings, method);
@@ -41,6 +41,19 @@
       } else {
         return this[method].call(this, options);
       }
+    },
+
+    overrides: function(options, scope) {
+      var self = this;
+      var overrideSections = 
+        $(scope).find(self.settings.section_selector)
+          .addBack(self.settings.section_selector);
+
+      overrideSections.each(function() {
+        var currentSettings = self.get_data($(this)) || {};
+        $.extend(true, currentSettings, options);
+        self.set_data($(this), currentSettings);
+      });
     },
 
     events: function() {
@@ -112,7 +125,7 @@
           region = $this.parent(),
           content = $this.siblings(self.settings.content_selector),
           section = region.parent(),
-          settings = $.extend({}, self.settings, self.data_options(section)),
+          settings = $.extend({}, self.settings, self.data_options(section), self.get_data(section)),
           prev_active_region = section.children(self.settings.region_selector).filter("." + self.settings.active_class);
 
       //for anchors inside [data-section-title]

@@ -3,39 +3,37 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-jasmine');
     grunt.loadNpmTasks('grunt-contrib-watch');
     grunt.loadNpmTasks('grunt-contrib-sass');
+    grunt.loadNpmTasks('grunt-contrib-jshint');
 
     grunt.initConfig({
-      jasmine: {
-        src: [
-            'js/foundation/foundation.js',
-            'js/foundation/*.js'
-        ],
+      jshint: {
         options: {
-            specs: 'spec/**/*Spec.js',
-            helpers: 'spec/**/*Helper.js',
+          '-W015': true,
+        },
+        src: ['js/foundation/*.js']
+      },
+      jasmine: {
+        options: {
             keepRunner: true,
-            styles: ['test/stylesheets/normalize.css', 'test/stylesheets/foundation.css']
+            styles: ['test/stylesheets/normalize.css', 'test/stylesheets/foundation.css'],
+            vendor: [
+                'js/vendor/custom.modernizr.js',
+                'js/vendor/jquery.js'
+            ]
         },
 
-        zepto: {
-            src: '<%= jasmine.src %>',
+        section: {
+            src: [
+                'js/foundation/foundation.js',
+                'js/foundation/foundation.section.js'
+            ],
             options: {
-                outfile: 'test/_SpecRunner_zepto.html',
-                vendor: [
-                    'js/vendor/custom.modernizr.js',
-                    'js/vendor/zepto.js'
+                specs: 'spec/js/section/**/*Spec.js',
+                helpers: [
+                    'spec/js/helpers/**/*Helper.js',
+                    'spec/js/section/**/*Helper.js'
                 ],
-            }
-        },
-
-        jquery: {
-            src: '<%= jasmine.src %>',
-            options: {
-                outfile: 'test/_SpecRunner_jquery.html',
-                vendor: [
-                    'js/vendor/custom.modernizr.js',
-                    'js/vendor/jquery.js'
-                ]
+                outfile: 'test/_SpecRunner_section.html',
             }
         }
       },
@@ -65,7 +63,9 @@ module.exports = function(grunt) {
       }
     });
 
-    grunt.registerTask('test', ['sass:test', 'jasmine:zepto', 'jasmine:jquery']);
+    grunt.registerTask('test', ['sass:test', 'jasmine:section']);
+
+    grunt.registerTask('travis', ['jshint','jasmine']);
 
     grunt.registerTask('default', ['test']);
 };

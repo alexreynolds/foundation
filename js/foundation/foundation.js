@@ -30,7 +30,9 @@ if (typeof jQuery === "undefined" &&
   $('head').append('<meta class="foundation-mq-large">');
 
   // Enable FastClick
-  FastClick.attach(document.body);
+  if(typeof FastClick !== 'undefined') {
+    FastClick.attach(document.body);
+  }
 
   /*
     matchMedia() polyfill - Test a CSS media 
@@ -74,6 +76,8 @@ if (typeof jQuery === "undefined" &&
 
   }( document ));
 
+  var initialized_libs = {};
+
   window.Foundation = {
     name : 'Foundation',
 
@@ -91,15 +95,16 @@ if (typeof jQuery === "undefined" &&
 
     init : function (scope, libraries, method, options, response) {
       var library_arr,
-          args = [scope, method, options, response],
           responses = [],
           nc = nc || false;
 
       // check RTL
-      this.rtl = /rtl/i.test($('html').attr('dir'));
+      if(typeof this.scope === 'undefined') {
+        this.rtl = /rtl/i.test($('html').attr('dir'));
 
-      // set foundation global scope
-      this.scope = scope || this.scope;
+        // set foundation global scope
+        this.scope = scope;
+      }
 
       if (libraries && typeof libraries === 'string' && !/reflow/i.test(libraries)) {
         if (/off/i.test(libraries)) return this.off();
@@ -107,7 +112,7 @@ if (typeof jQuery === "undefined" &&
         library_arr = libraries.split(' ');
 
         if (this.libs.hasOwnProperty(libraries)) {
-          responses.push(this.init_lib(libraries, args));
+          responses.push(this.init_lib(libraries, scope, method, options, response));
         }
       } else {
         // if (/reflow/i.test(libraries)) args[1] = 'reflow';
@@ -117,23 +122,30 @@ if (typeof jQuery === "undefined" &&
         }
       }
 
-      // if first argument is callback, add to args
-      if (typeof libraries === 'function') {
-        args.unshift(libraries);
-      }
-
       return scope;
     },
 
-    init_lib : function (lib, args) {
+    init_lib : function (lib, scope, method, options, response) {
+      var args = [scope, method, options, response];
+
       if (this.libs.hasOwnProperty(lib)) {
-        this.patch(this.libs[lib]);
+        if (!initialized_libs.hasOwnProperty(lib)) {
+          this.patch(this.libs[lib]);
 
-        if (args && args.hasOwnProperty(lib)) {
-          return this.libs[lib].init.apply(this.libs[lib], [this.scope, args[lib]]);
+          if (args && args.hasOwnProperty(lib)) {
+            initialized_libs[lib] = this.libs[lib].init.apply(this.libs[lib], [this.scope, args[lib]]);
+          } else {
+            initialized_libs[lib] = this.libs[lib].init.apply(this.libs[lib], args);
+          }
+
+          return initialized_libs[lib];
+        } else {
+          // Already initialized.  Call method if it exists and pass
+          // scope last to avoid breaking existing functions.
+          if(this.libs[lib].hasOwnProperty(method)) {
+            this.libs[lib][method].call(this.libs[lib], options, scope);
+          }
         }
-
-        return this.libs[lib].init.apply(this.libs[lib], args);
       }
 
       return function () {};
